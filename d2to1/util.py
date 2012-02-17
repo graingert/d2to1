@@ -102,7 +102,11 @@ def cfg_to_args(path='setup.cfg'):
                         "data_files": ("files",),
                         "scripts": ("files",),
                         "py_modules": ("files", "modules"),   # **
-                        "cmdclass": ("global", "commands")
+                        "cmdclass": ("global", "commands"),
+                        # Not supported in distutils2, but provided for
+                        # backwards compatibility with setuptools
+                        "use_2to3": ("backwards_compat", "use_2to3"),
+                        "zip_safe": ("backwards_compat", "zip_safe")
                         }
 
     MULTI_FIELDS = ("classifiers",
@@ -116,6 +120,8 @@ def cfg_to_args(path='setup.cfg'):
                     "scripts",
                     "py_modules",
                     "cmdclass")
+
+    BOOL_FIELDS = ("use_2to3", "zip_safe")
 
     # The method source code really starts here.
     parser = RawConfigParser()
@@ -173,6 +179,12 @@ def cfg_to_args(path='setup.cfg'):
 
         if arg in MULTI_FIELDS:
             in_cfg_value = split_multiline(in_cfg_value)
+        elif arg in BOOL_FIELDS:
+            # Provide some flexibility here...
+            if in_cfg_value.lower() in ('true', 't', '1', 'yes', 'y'):
+                in_cfg_value = True
+            else:
+                in_cfg_value = False
 
         if in_cfg_value:
             if arg == 'install_requires':
@@ -183,17 +195,28 @@ def cfg_to_args(path='setup.cfg'):
             elif arg == 'package_dir':
                 in_cfg_value = {'': in_cfg_value}
             elif arg in ('package_data', 'data_files'):
-                # The setup.cfg format currently only supports one glob per
-                # package (or at least that's the way it's parsed).  This
-                # should be fixed.  It also doesn't support '' for the package.
                 data_files = {}
-                for data in in_cfg_value:
-                    data = data.split('=', 1)
-                    if len(data) != 2:
-                        continue
-                    key, value = data[0].strip(), data[1].strip()
-                    value = value.split()
-                    data_files[key] = value
+                firstline = True
+                prev = None
+                for line in in_cfg_value:
+                    if '=' in line:
+                        key, value = line.split('=', 1)
+                        key, value = (key.strip(), value.strip())
+                        if key in data_files:
+                            # Multiple duplicates of the same package name;
+                            # this is for backwards compatibility of the old
+                            # format prior to d2to1 0.2.6.
+                            prev = data_files[key]
+                            prev.extend(value.split())
+                        else:
+                            prev = data_files[key.strip()] = value.split()
+                    elif firstline:
+                        raise DistutilsOptionError(
+                            'malformed package_data first line %r (misses '
+                            '"=")' % line)
+                    else:
+                        prev.extend(line.strip().split())
+                    firstline = False
                 if arg == 'data_files':
                     # the data_files value is a pointlessly different structure
                     # from the package_data value
@@ -210,14 +233,11 @@ def cfg_to_args(path='setup.cfg'):
 
         kwargs[arg] = in_cfg_value
 
-
     kwargs['ext_modules'] = get_extension_modules(config)
-
+    kwargs['entry_points'] = get_entry_points(config)
 
     wrap_commands(kwargs)
-
     return kwargs
-
 
 
 def register_custom_compilers(config):
@@ -273,7 +293,12 @@ def get_extension_modules(config):
 
     ext_modules = []
     for section in config:
-        labels = section.split('=')
+        if ':' in section:
+            labels = section.split(':', 1)
+        else:
+            # Backwards compatibility for old syntax; don't use this though
+            labels = section.split('=', 1)
+        labels = [l.strip() for l in labels]
         if (len(labels) == 2) and (labels[0] == 'extension'):
             ext_args = {}
             for field in EXTENSION_FIELDS:
@@ -300,6 +325,20 @@ def get_extension_modules(config):
                 ext_modules.append(Extension(ext_args.pop('name'),
                                              **ext_args))
     return ext_modules
+
+
+def get_entry_points(config):
+    """Process the [entry_points] section of setup.cfg to handle setuptools
+    entry points.  This is, of course, not a standard feature of
+    distutils2/packaging, but as there is not currently a standard alternative
+    in packaging, we provide support for them.
+    """
+
+    if not 'entry_points' in config:
+        return {}
+
+    return dict((option, split_multiline(value))
+                for option, value in config['entry_points'].items())
 
 
 def wrap_commands(kwargs):
@@ -385,7 +424,8 @@ def has_get_option(config, section, option):
 
 
 def split_multiline(value):
-    # Special behaviour when we have a multi line option
+    """Special behaviour when we have a multi line options"""
+
     value = [element for element in
              (line.strip() for line in value.split('\n'))
              if element]

@@ -5,7 +5,39 @@ Changes
 0.2.6 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Added support for setuptools entry points in an ``[entry_points]`` section of
+  setup.cfg--this is just for backwards-compatibility purposes, as
+  packaging/distutils2 does not yet have a standard replacement for the entry
+  points system.
+
+- Added a [backwards_compat] section for setup.cfg for other options that are
+  supported by setuptools/distribute, but that aren't part of the distutils2
+  standard.  So far the only options supported here are zip_safe and use_2to3.
+  (Note: packaging does support a use-2to3 option to the build command, but if
+  we tried to use that, distutils would not recognize it as a valid build
+  option.)
+
+- Added support for the new (and presumably final) extension section format
+  used by packaging.  In this format, extensions should be specified in config
+  sections of the format ``[extension: ext_mod_name]``, where any whitespace is
+  optional.  The old format used an ``=`` instead of ``:`` and is still
+  supported, but should be considered deprecated.
+
+- Added support for the new syntax used by packaging for the package_data
+  option (which is deprecated in packaging in favor of the resources system,
+  but still supported).  The new syntax is like::
+
+      package_data =
+          packagename = pattern1 pattern2 pattern3
+          packagename.subpack = 
+              pattern1
+              pattern2
+              pattern3
+
+ That is, after ``package_data =``, give the name of a package, followed by
+ an ``=``, followed by any number of whitespace separated wildcard patterns (or
+ actual filenames relative to the package).  Under this scheme, whitespace is
+ not allowed in the patterns themselves.
 
 
 0.2.5 (2011-07-21)
