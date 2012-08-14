@@ -87,7 +87,7 @@ def cfg_to_args(path='setup.cfg'):
                         "url": ("metadata", "home_page"),
                         "description": ("metadata", "summary"),
                         "long_description": ("metadata", "description"),
-                        "download-url": ("metadata",),
+                        "download_url": ("metadata",),
                         "classifiers": ("metadata", "classifier"),
                         "platforms": ("metadata", "platform"),  # **
                         "license": ("metadata",),
@@ -163,7 +163,7 @@ def cfg_to_args(path='setup.cfg'):
             # There is no such option in the setup.cfg
             if arg == "long_description":
                 in_cfg_value = has_get_option(config, section,
-                                              "description-file")
+                                              "description_file")
                 if in_cfg_value:
                     in_cfg_value = split_multiline(in_cfg_value)
                     value = ''
