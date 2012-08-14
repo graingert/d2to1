@@ -86,6 +86,7 @@ def cfg_to_args(path='setup.cfg'):
                         "maintainer_email": ("metadata",),
                         "url": ("metadata", "home_page"),
                         "description": ("metadata", "summary"),
+                        "keywords": ("metadata",),
                         "long_description": ("metadata", "description"),
                         "download_url": ("metadata",),
                         "classifiers": ("metadata", "classifier"),
