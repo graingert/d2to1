@@ -124,6 +124,8 @@ def cfg_to_args(path='setup.cfg'):
 
     BOOL_FIELDS = ("use_2to3", "zip_safe")
 
+    CSV_FIELDS = ("keywords",)
+
     # The method source code really starts here.
     parser = RawConfigParser()
     if not os.path.exists(path):
@@ -178,6 +180,8 @@ def cfg_to_args(path='setup.cfg'):
             else:
                 continue
 
+        if arg in CSV_FIELDS:
+            in_cfg_value = split_csv(in_cfg_value)
         if arg in MULTI_FIELDS:
             in_cfg_value = split_multiline(in_cfg_value)
         elif arg in BOOL_FIELDS:
@@ -434,6 +438,14 @@ def split_multiline(value):
 
     value = [element for element in
              (line.strip() for line in value.split('\n'))
+             if element]
+    return value
+
+def split_csv(value):
+    """Special behaviour when we have a comma separated options"""
+
+    value = [element for element in
+             (chunk.strip() for chunk in value.split(','))
              if element]
     return value
 
