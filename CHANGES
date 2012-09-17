@@ -10,6 +10,9 @@ Changes
   some sub-directory.  Now the packages_root directory is prepended to
   sys.path while processing the setup.cfg and running setup hooks.
 
+- Added support for the Keywords metadata field via the keywords option in the
+  [metadata] section of setup.cfg.
+
 - Upgraded the shipped distribute_setup.py to the latest for distribute 0.6.28
 
 
