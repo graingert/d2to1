@@ -16,8 +16,8 @@ from collections import defaultdict
 import distutils.ccompiler
 
 from distutils import log
-from distutils.errors import DistutilsOptionError, DistutilsModuleError \
-        DistutilsFileError
+from distutils.errors import (DistutilsOptionError, DistutilsModuleError,
+                              DistutilsFileError)
 from setuptools.dist import Distribution
 from setuptools.extension import Extension
 try:

@@ -13,6 +13,9 @@ Changes
 - Added support for the Keywords metadata field via the keywords option in the
   [metadata] section of setup.cfg.
 
+- Fixed a missing import that caused a misleading exception when setup.cfg is
+  missing.
+
 - Upgraded the shipped distribute_setup.py to the latest for distribute 0.6.28
 
 
