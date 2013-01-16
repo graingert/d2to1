@@ -7,7 +7,7 @@ VERSION = '0.1.dev'
 class TestCore(D2to1TestCase):
     def test_setup_py_version(self):
         """
-        Test that the `./setupy.py --version` command returns the correct
+        Test that the `./setup.py --version` command returns the correct
         value without balking.
         """
 
@@ -17,7 +17,7 @@ class TestCore(D2to1TestCase):
 
     def test_setup_py_keywords(self):
         """
-        Test that the `./setupy.py --keywords` command returns the correct
+        Test that the `./setup.py --keywords` command returns the correct
         value without balking.
         """
 
