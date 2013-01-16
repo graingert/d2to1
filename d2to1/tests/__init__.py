@@ -1,19 +1,47 @@
 from __future__ import with_statement
-
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 
+import pkg_resources
+
 from .util import rmtree, open_config
 
-# Determine the d2to1 development version from setup.cfg; note these tests are
-# intended to be run from the source
-with open_config(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir,
-                              'setup.cfg')) as cfg:
-    D2TO1_VERSION = cfg.get('metadata', 'version')
-del cfg
+
+D2TO1_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                         os.pardir, os.pardir))
+
+
+def fake_d2to1_dist():
+    # Fake a d2to1 distribution from the d2to1 package that these tests reside
+    # in and make sure it's active on the path with the appropriate entry
+    # points installed
+
+    class _FakeProvider(pkg_resources.EmptyProvider):
+        """A fake metadata provider that does almost nothing except to return
+        entry point metadata.
+        """
+
+        def has_metadata(self, name):
+            return name == 'entry_points.txt'
+
+        def get_metadata(self, name):
+            if name == 'entry_points.txt':
+                return '[distutils.setup_keywords]\nd2to1 = d2to1.core:d2to1\n'
+            else:
+                return ''
+
+
+    sys.path.insert(0, D2TO1_DIR)
+    if 'd2to1' in sys.modules:
+        del sys.modules['d2to1']
+    if 'd2to1' in pkg_resources.working_set.by_key:
+        del pkg_resources.working_set.by_key['d2to1']
+    dist = pkg_resources.Distribution(location=D2TO1_DIR, project_name='d2to1',
+                                      metadata=_FakeProvider())
+    pkg_resources.working_set.add(dist)
 
 
 class D2to1TestCase(object):
@@ -24,9 +52,6 @@ class D2to1TestCase(object):
                         self.package_dir)
         self.oldcwd = os.getcwd()
         os.chdir(self.package_dir)
-        with open(os.path.join(self.package_dir, 'd2to1_testpackage',
-                               'version.py'), 'w') as f:
-            f.write('D2TO1_VERSION = %r' % D2TO1_VERSION)
 
     def teardown(self):
         os.chdir(self.oldcwd)
@@ -39,7 +64,11 @@ class D2to1TestCase(object):
         rmtree(self.temp_dir)
 
     def run_setup(self, *args):
-        return self._run_cmd(sys.executable, ('setup.py',) + args)
+        cmd = ('-c',
+               'import sys;sys.path.insert(0, %r);'
+               'from d2to1.tests import fake_d2to1_dist;'
+               'fake_d2to1_dist();execfile("setup.py")' % D2TO1_DIR)
+        return self._run_cmd(sys.executable, cmd + args)
 
     def run_svn(self, *args):
         return self._run_cmd('svn', args)
@@ -56,5 +85,4 @@ class D2to1TestCase(object):
                              stderr=subprocess.PIPE)
 
         streams = tuple(s.decode('latin1').strip() for s in p.communicate())
-
         return (streams) + (p.returncode,)
