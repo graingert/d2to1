@@ -1,3 +1,4 @@
+import textwrap
 from . import D2to1TestCase
 
 
@@ -24,3 +25,12 @@ class TestCore(D2to1TestCase):
         self.run_setup('egg_info')
         stdout, _, _ = self.run_setup('--keywords')
         assert stdout == 'packaging,distutils,setuptools'
+
+    def test_sdist_extra_files(self):
+        """
+        Test that the extra files are correctly added.
+        """
+        stdout, _, return_code = self.run_setup('sdist')
+        assert textwrap.dedent("""
+            deleting manifest file (d2to1) 'MANIFEST'
+        """) in stdout
