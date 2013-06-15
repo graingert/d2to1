@@ -1,6 +1,7 @@
 import glob
 import os
 import tarfile
+import d2to1.utils
 
 from . import D2to1TestCase
 
@@ -9,6 +10,12 @@ VERSION = '0.1.dev'
 
 
 class TestCore(D2to1TestCase):
+    def test_setup_args(self):
+        assert set(cfg_to_args()["install_requires"]) == {
+            'setuptools>=0.7,<0.8',
+            'zope.interface>=3.1,!=3.1.3,<3.2'
+        }
+
     def test_setup_py_version(self):
         """
         Test that the `./setup.py --version` command returns the correct
